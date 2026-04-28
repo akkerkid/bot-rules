@@ -3,6 +3,14 @@
 Before `gh pr create`, dispatch a fresh-context subagent. Do NOT
 inline-review your own diff — your context is biased toward what you wrote.
 
+**This phase is REQUIRED.** A PR opened without a Phase 3 audit block
+in its body will be rejected by the reviewer-agent and the bot-discipline
+CI check.
+
+**The Q1-Q5 audit must be the OUTPUT of an actual subagent dispatch**,
+not text you wrote yourself reciting that you "did the review". The
+PR body should include the literal subagent return value, not a paraphrase.
+
 ## Dispatch
 
 ```
@@ -44,9 +52,25 @@ Be terse. Cite specifics. Don't rewrite the code — just judge it.
 
 - ✅ ship → `gh pr create`. PR body MUST include:
   - "Closes #N"
-  - The Q1-Q5 verdict block (audit trail for the human reviewer)
+  - The Q1-Q5 verdict block VERBATIM from the subagent's response
   - "GPG signed: $(git log -1 --format='%G?')"
+  - **Pytest output** (or "tests not runnable on autobox" with rationale per `11-work-phase.md` step 1)
 - ⚠ revise → address every note, re-run review.
 - 3× ⚠ on the same diff → switch to ❌ (you've stalled).
 - ❌ block → label issue `bot-blocked`, post to Discord with the verdict
   text, move on. Don't open the PR.
+
+## Anti-pattern: claiming verification you didn't do
+
+If you find yourself writing phrases like "all tests pass" or
+"verified the fix works" without a captured pytest invocation in the
+audit block, **STOP**. That's hallucinated verification. Either:
+
+- Run the actual test command (per `11-work-phase.md` step 1) and
+  paste the output, OR
+- Acknowledge the gap explicitly: `Q1 audit: tests requiring fastapi
+  imports were not runnable on autobox; signature is unchanged from
+  prior version (verified by diff inspection)`.
+
+This rule is non-negotiable. The reviewer-agent on prod (Plan 4) will
+catch hallucinated verification claims and ⚠ the PR.

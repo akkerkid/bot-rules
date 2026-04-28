@@ -1,11 +1,42 @@
 # 11 — Work phase (Phase 2 of each iteration)
 
-## Step 0: Run feasibility check first
+## Step 0: Feasibility check FIRST
 
 See `06-feasibility-check.md`. If it returns "block" — do not proceed to
 TDD. Comment, label, unassign, move on.
 
-## Step 1: Standard TDD
+## Step 1: How to actually run tests on this autobox
+
+The autobox does NOT have docker. The pytest binary lives at
+`/home/bot/work/meshcore-planner/.venv/bin/pytest`. Tests against the
+backend run from `/home/bot/work/meshcore-planner/backend/` with
+`PYTHONPATH=.` set. Concretely:
+
+```bash
+cd /home/bot/work/meshcore-planner/backend
+PYTHONPATH=. /home/bot/work/meshcore-planner/.venv/bin/pytest tests/test_<module>.py -v
+```
+
+The venv has ONLY pytest, not the full backend deps. That means:
+
+- **Tests with no third-party imports beyond pytest**: run fine on the
+  autobox. Many script-style tests (e.g. `test_sanitize_db_for_bot.py`)
+  fall in this bucket. Run them; observe real pass/fail.
+- **Tests that import fastapi / sqlalchemy / pydantic / etc.**: will
+  fail with ImportError on the autobox. **DO NOT claim such a test
+  passes — you literally cannot run it.** Either:
+  1. Skip the test in the bot's verification step and document the gap
+     in the PR body's Q1-Q5 audit (Q1: "tests requiring fastapi were
+     not runnable on the autobox; verified manually that signature is
+     unchanged"), OR
+  2. Mark the issue `bot-blocked-need-data` (the missing data being
+     "venv with full backend deps") and move on.
+- **NEVER write `All N tests pass` unless you have CAPTURED the actual
+  pytest output in your PR body's audit block.** Hallucinated test
+  results are a CRITICAL violation of `02-meshcore-invariants.md`
+  (these rules win over your judgment).
+
+## Step 2: Standard TDD
 
 Invoke `superpowers:test-driven-development`. Standard cycle.
 
@@ -19,20 +50,49 @@ Commit messages: conventional-commits style, footer `refs #N`.
   project preference (see `01-codebase-respect.md`).
 - True coordinates (`true_lat`/`true_lon`) NEVER appear in any user-facing
   response. If your work touches user-facing payloads, run the privacy
-  test suite: `pytest backend/tests/test_privacy.py`.
+  test suite (must be runnable on autobox or via a feasibility-block).
 - Provenance stamping: every inbound observation needs a Provenance record.
   If you're adding an ingest path, see `backend/app/provenance.py` and
   don't merge without it.
 
-## State file updates
+## State file updates — REQUIRED, not optional
 
-Update `/home/bot/.bot-state.md` whenever you complete a meaningful step:
+You MUST write `/home/bot/.bot-state.md` BEFORE the iteration ends.
+The wrapper restarts you in 60 min – 4 h. Without state, the next
+iteration has no idea what was in flight.
+
+Use this exact format (overwrite, don't append — keep it short):
 
 ```yaml
-active_issue: 142
-active_branch: bot/142-foo
-active_step: tests-written
-last_update: 2026-04-27T15:23:00Z
+last_iter_end: 2026-04-28T12:34:56Z
+last_status: <claimed|in-flight|blocked|exited-empty>
+active_issue: 142            # null if no issue
+active_branch: bot/142-foo   # null if no branch
+active_step: <free text>     # what step you're on; null if no work
+notes:
+  - one-line memo per significant action this iter
 ```
 
-Hit the iteration timeout? That's fine. State file picks up next iter.
+If you exit without writing this file, you've violated the bootstrap
+protocol. The reviewer-agent (Plan 4) will treat any PR opened without
+a corresponding state-file update as suspicious.
+
+## Commit + push + PR — REQUIRED at end of work phase
+
+Before ending the iteration, you MUST either:
+1. **Commit + push the work to the bot's fork**, then call
+   `gh pr create` to open the PR (followed by Phase 3 pre-PR review),
+   OR
+2. **Mark the issue blocked** (`bot-blocked-*` label + comment +
+   unassign), and update `.bot-state.md` to reflect the block.
+
+Mid-flight work that hasn't reached either gate should also be
+committed (uncommitted modifications are NOT allowed at iteration end —
+they pollute the next iter's working tree). Use a WIP commit:
+
+```bash
+git commit -am "WIP: refs #N — partial work, will continue next iter"
+git push -u origin bot/N-foo
+```
+
+The next iteration sees the WIP commit and continues from there.
