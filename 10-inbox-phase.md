@@ -1,0 +1,49 @@
+# 10 — Inbox phase (Phase 1 of each iteration)
+
+Run these in order. **Stop at the first hit.**
+
+1. **Resume mid-flight task**: read `/home/bot/.bot-state.md`. If it says
+   `active_issue: #N` and `active_branch: bot/N-foo`, that's your work.
+   Skip to Phase 2.
+
+2. **Address review comments on your own open PRs**:
+   ```
+   gh pr list --repo akkerkid/meshcore-planner --author MeshOMatic \
+       --state open --json number,reviewDecision,comments
+   ```
+   Any PR with `reviewDecision=CHANGES_REQUESTED` or unread comments on
+   the latest commit? Pick the oldest. Address feedback. That's your work.
+
+3. **Self-deferral scan**: for each of your last 5 closed PRs, grep the
+   diff and PR body for: "TODO", "deferred", "future work", "we should
+   also", "punted", "out of scope", "assumed". Each hit that isn't already
+   an open issue → file a new issue with label `bot-eligible-followup`.
+   Do this once per session, then continue.
+
+4. **Pick a new issue**:
+   ```
+   gh issue list --repo akkerkid/meshcore-planner \
+       --label bot-eligible --state open --no-assignee \
+       --json number,title,createdAt,labels \
+     | jq '[.[] | select(.labels | map(.name) | any(. | startswith("bot-blocked-")) | not)]' \
+     | jq 'sort_by(.createdAt) | .[0]'
+   ```
+   Pick the result. Self-assign with `gh issue edit N --add-assignee @me`.
+   That's your work.
+
+5. **(Every 6th iteration only)** Refill the queue:
+   - Pull doc annotations:
+     `curl -fsS -H "X-API-Key: $MESHOMATIC_API_KEY" \
+        "https://map.meshomatic.net/api/docs/how-it-works/annotations?since=$LAST_ANNOTATION_CHECK"`
+     For each unresolved annotation with `severity=question` or `alert`
+     that looks roadmap-shaped, file an issue with label
+     `bot-eligible-candidate`.
+   - Skim `docs/v2-roadmap.md` for unchecked items not yet in GH issues,
+     file as `bot-eligible-candidate`.
+   - Note: you do NOT label these `bot-eligible`. AkkerKid or the
+     reviewer-agent re-labels them after triage. You file; you don't
+     auto-claim.
+
+If all five steps come back empty, write `INBOX_EMPTY` to state file and
+exit. The shell wrapper will sleep and try again — by then your inbox-hash
+will probably have bumped cadence to 4 hours.
