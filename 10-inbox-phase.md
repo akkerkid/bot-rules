@@ -6,6 +6,24 @@ Run these in order. **Stop at the first hit.**
    `active_issue: #N` and `active_branch: bot/N-foo`, that's your work.
    Skip to Phase 2.
 
+1.5. **Rebase requests on your own PRs** (high priority — main has moved):
+   ```
+   gh pr list --repo akkerkid/meshcore-planner --author MeshOMatic \
+       --state open --label bot-rebase --json number,title,labels
+   ```
+   Also scan PR comments for the trigger phrase `@meshomatic please rebase`
+   (case-insensitive):
+   ```
+   gh pr list --repo akkerkid/meshcore-planner --author MeshOMatic \
+       --state open --json number,comments \
+     | jq -c '.[] | select(.comments[].body | test("@meshomatic please rebase"; "i"))'
+   ```
+   Either signal → that PR is your work for this iter. Follow the procedure
+   in `08-rebase-and-retest.md` (rebase onto upstream/main, re-run tests,
+   re-run pre-PR audit, force-push with --force-with-lease, comment with
+   summary, remove the `bot-rebase` label). Don't proceed to step 2-5 until
+   all rebase-flagged PRs are handled.
+
 2. **Address review comments on your own open PRs**:
    ```
    gh pr list --repo akkerkid/meshcore-planner --author MeshOMatic \
