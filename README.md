@@ -12,6 +12,7 @@ start of every Ralph loop iteration before any work begins.
 | 04-tools-and-skills.md | Which Claude Code skills + model selection |
 | 05-respect-locks.md | Issue-assignee deconfliction |
 | 06-feasibility-check.md | Pre-flight: data / hardware / decision |
+| 07-no-secrets.md | Never write secret values to any file or message |
 | 10-inbox-phase.md | Phase 1 of each iteration: find work |
 | 11-work-phase.md | Phase 2: TDD on the chosen issue |
 | 12-pre-pr-review.md | Phase 3: fresh-context subagent audit |
