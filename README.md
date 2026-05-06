@@ -14,6 +14,7 @@ start of every Ralph loop iteration before any work begins.
 | 06-feasibility-check.md | Pre-flight: data / hardware / decision |
 | 07-no-secrets.md | Never write secret values to any file or message |
 | 08-rebase-and-retest.md | When main has moved under your PR (label `bot-rebase` or `@meshomatic please rebase` comment) |
+| 09-frontend-dep-changes.md | Lockfile-correct workflow for `frontend/package*.json` bumps (regenerate, `npm ci` verify, capture output) |
 | 10-inbox-phase.md | Phase 1 of each iteration: find work |
 | 11-work-phase.md | Phase 2: TDD on the chosen issue |
 | 12-pre-pr-review.md | Phase 3: fresh-context subagent audit |
