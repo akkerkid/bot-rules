@@ -17,6 +17,7 @@ start of every Ralph loop iteration before any work begins.
 | 10-inbox-phase.md | Phase 1 of each iteration: find work |
 | 11-work-phase.md | Phase 2: TDD on the chosen issue |
 | 12-pre-pr-review.md | Phase 3: fresh-context subagent audit |
+| 13-cross-references.md | Code↔doc `DOCS:` markers — touch-driven, INSIDE docstrings, append-only |
 
 Edits here take effect within one bot iteration cycle (no autobox redeploy).
 
