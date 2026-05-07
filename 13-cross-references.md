@@ -49,14 +49,41 @@ def _publish_packet(self, ...):
     """
 ```
 
-JavaScript — JSDoc:
+JavaScript / TypeScript — first body line, **NOT** JSDoc above the
+declaration. JSDoc-immediately-above is the JS convention but it loses
+to grep: agents searching for `function App` and reading forward miss
+anything above the matched line. Put the ref inside the body instead.
 
 ```javascript
-/**
- * App routing and layout.
- *
- * DOCS: docs/how-it-works/G1-frontend-architecture.md
- */
+function App() {
+    // DOCS: docs/how-it-works/G1-frontend-architecture.md — routing & layout
+    ...
+}
+```
+
+Arrow functions and class methods: same rule, first line inside the body.
+
+```javascript
+const resolveCoverage = (repeater) => {
+    // DOCS: docs/how-it-works/B3-coverage-tiles.md
+    ...
+};
+
+class CoverageGrid {
+    resolve(tile) {
+        // DOCS: docs/how-it-works/B3-coverage-tiles.md#resolve
+        ...
+    }
+}
+```
+
+Module-level (file top): a leading `// DOCS:` comment above imports is
+fine — module greps start at line 1, so it's discoverable.
+
+```javascript
+// DOCS: docs/how-it-works/G1-frontend-architecture.md — App routing & layout
+
+import { ... } from '...'
 ```
 
 Bash — first line **inside** function body:
