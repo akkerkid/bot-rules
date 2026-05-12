@@ -36,11 +36,48 @@ The venv has ONLY pytest, not the full backend deps. That means:
   results are a CRITICAL violation of `02-meshcore-invariants.md`
   (these rules win over your judgment).
 
+## Step 1.5: Ground your branch on current upstream/main
+
+Before creating your work branch, refresh upstream and branch directly
+from the tip — do NOT branch from your local `main` (it may be stale by
+hours or days, and other contributors merge into upstream constantly).
+
+The cost of skipping this step is the silent-mass-deletion failure
+pattern caught on PRs #30, #31, #197, #202 (2026-05-12): the bot's
+branch base is N days old, the bot's diff against its own base is
+small and looks clean, but `git diff upstream/main..HEAD` reveals the
+merge would also delete every file that landed since the branch base.
+The Q1–Q5 audit doesn't catch this because the subagent reviews the
+bot's intended diff, not the merge result.
+
+```bash
+cd /home/bot/work/meshcore-planner
+
+# Verify the workspace is clean. Uncommitted files from a previous
+# iteration MUST NOT leak into your new branch — that's how unrelated
+# changes ("Discord bot edits in a test(bg_utils) PR") happen.
+if [ -n "$(git status --porcelain)" ]; then
+    echo "ERROR: working tree dirty before Step 1.5 — workspace contamination."
+    git status --short
+    # Don't try to clean up automatically — log the dirty state, label
+    # the issue `bot-blocked-need-decision`, and exit. AkkerKid investigates.
+    exit 1
+fi
+
+git fetch upstream main
+git checkout -B bot/<issue_number>-<kebab-slug> upstream/main
+```
+
+If `git status --porcelain` is non-empty, that's a contamination
+incident from a previous iteration. The right move is to log it, block
+the issue, and exit — never `git checkout --` your way through it,
+because you might be discarding a sibling agent's in-flight work.
+
 ## Step 2: Standard TDD
 
 Invoke `superpowers:test-driven-development`. Standard cycle.
 
-Branch naming: `bot/<issue_number>-<kebab-slug>`
+Branch naming: `bot/<issue_number>-<kebab-slug>` (already set in Step 1.5).
 Commit messages: conventional-commits style, footer `refs #N`.
 
 ## Three special rules for this codebase

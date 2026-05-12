@@ -1,6 +1,23 @@
 # 08 — Rebase and re-test (when main moves under your PR)
 
-Other contributors merge into `akkerkid/meshcore-planner` `main` while your PR is awaiting review. When that happens, your branch may now conflict with main, OR your tests may have been invalidated by changes to code you depend on. AkkerKid (or the reviewer-agent) signals this by:
+Other contributors merge into `akkerkid/meshcore-planner` `main` while your PR is awaiting review (or, increasingly, while your iteration is in flight — sibling agents merge dozens of PRs per day). When that happens, your branch may now conflict with main, OR your tests may have been invalidated by changes to code you depend on. There are TWO triggers for this rule:
+
+**Trigger A — proactive (you, before `gh pr create`):**
+
+Before opening the PR, run the two-dot stat check:
+
+```bash
+git fetch upstream main
+git diff upstream/main..HEAD --stat | tail -1
+```
+
+The `..` (two-dot) syntax shows what would actually land if you merged. If the totals are larger than what you intended to ship — extra files touched, large `-` deletion counts — your branch base is stale, and `mergeStateStatus: CLEAN` is lying to you (git auto-resolves add-vs-delete by deleting). DO NOT open the PR. Run the rebase-and-retest procedure below first. Forensic notes from the 2026-05-12 incident (PRs #30, #31, #197, #202) all caught this way: bot opens PR with `+729/-5` claim; actual merge against current main was `+1604/-14806`.
+
+Heuristic: if the two-dot file count > 1.5× the in-scope files you touched, OR the two-dot deletion count > your insertion count, you're stale. Rebase.
+
+**Trigger B — reactive (someone tells you):**
+
+AkkerKid or the reviewer-agent signals this by:
 
 - Applying the **`bot-rebase`** label to your PR, AND/OR
 - Posting a comment on the PR containing the literal phrase **`@meshomatic please rebase`** (case-insensitive)

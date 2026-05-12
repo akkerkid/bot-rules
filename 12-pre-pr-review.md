@@ -26,11 +26,12 @@ Agent({
 ```
 You are reviewing a diff for issue #N. Inputs:
 1. The rules: /home/bot/work/bot-rules/*.md
-2. The diff: `git diff upstream/main...HEAD`
-3. The issue: `gh issue view N`
-4. Bot's scratchpad: /home/bot/.bot-state.md
+2. The bot's intended diff: `git diff upstream/main...HEAD` (three-dot — what HEAD adds)
+3. The actual MERGE diff: `git diff upstream/main..HEAD --stat` (two-dot — what would land if merged)
+4. The issue: `gh issue view N`
+5. Bot's scratchpad: /home/bot/.bot-state.md
 
-Answer 5 questions, each with file:line citations:
+Answer 6 questions, each with file:line citations:
 
 Q1: Does the diff respect every rule? List violations.
 Q2: Does the diff duplicate existing code/utilities? Grep for similar
@@ -42,6 +43,17 @@ Q4: For each new function, trace outputs 1-2 callers down. Does the
 Q5: Are there punted decisions, "TODO"s, or "we should also" comments
     in the diff? Each one needs a follow-up issue OR justification for
     why it's deferred.
+Q6: **Branch-base sanity check.** Compare `git diff upstream/main...HEAD --stat`
+    (three-dot, what the bot intended) vs `git diff upstream/main..HEAD --stat`
+    (two-dot, what the merge would actually do). If the two-dot total is
+    materially larger (more files OR significantly more line deletions),
+    the branch base is stale and the merge would silently revert work
+    that landed on upstream since the branch base. List each file the
+    merge would touch but the bot's intended diff doesn't.
+
+    Heuristic: if `two-dot files > 1.5 × three-dot files` OR
+    `two-dot deletions > three-dot insertions`, that's a STALE-BASE
+    ❌ block — instruct the bot to follow `08-rebase-and-retest.md`.
 
 Verdict: ✅ ship | ⚠ revise (with line-level notes) | ❌ block
 
