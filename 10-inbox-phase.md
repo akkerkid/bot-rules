@@ -41,13 +41,24 @@ Run these in order. **Stop at the first hit.**
 4. **Pick a new issue**:
    ```
    gh issue list --repo akkerkid/meshcore-planner \
-       --label bot-eligible --state open --no-assignee \
-       --json number,title,createdAt,labels \
-     | jq '[.[] | select(.labels | map(.name) | any(. | startswith("bot-blocked-")) | not)]' \
+       --label bot-eligible --state open --limit 200 \
+       --json number,title,createdAt,labels,assignees \
+     | jq '[.[]
+            | select(.assignees | length == 0)
+            | select(.labels | map(.name) | any(startswith("bot-blocked-")) | not)]' \
      | jq 'sort_by(.createdAt) | .[0]'
    ```
    Pick the result. Self-assign with `gh issue edit N --add-assignee @me`.
    That's your work.
+
+   **NOTE — do not use `--no-assignee`.** That is NOT a valid `gh issue list`
+   flag (it is a `gh search issues` qualifier only). Passing it makes
+   `gh issue list` error out, emit nothing on stdout, and the jq pipeline
+   then yields nothing — which looks identical to "queue is empty" and
+   causes a false `INBOX_EMPTY`. Filter assignees in jq instead, as above.
+   `--limit 200` is required because `gh issue list` defaults to 30 newest
+   and `sort_by(.createdAt) | .[0]` would otherwise pick the oldest of only
+   the 30 newest, not the true oldest.
 
 5. **(Every 6th iteration only)** Refill the queue:
    - Pull doc annotations:
