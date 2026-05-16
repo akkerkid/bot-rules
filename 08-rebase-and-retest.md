@@ -86,6 +86,16 @@ git push --force-with-lease origin <branch-name>
 
 `--force-with-lease` (NOT plain `--force`) refuses the push if anyone else has touched the branch since you fetched it. That protects against the rare race where the reviewer pushed a fixup commit and then asked for rebase — your force-push would otherwise eat their fixup.
 
+**Force-push, NOT close+reopen.** When an open PR carries the `bot-rebase` label, the default response is force-push the rebased branch to the same PR. This preserves the review thread, comment history, and GitHub's diff-against-previous-version view that AkkerKid uses to verify the rebase did what was claimed.
+
+The narrow exception is when the rebased diff is **fundamentally different** from what the reviewer originally saw — typically because the proactive Trigger A check (two-dot stat) shows the realized merge would be much larger than what your PR body claims (e.g. `+729/-5` claimed vs `+1604/-14806` actual, the 2026-05-12 incident pattern). In that case, the existing review thread is reviewing a phantom — close+reopen is acceptable. When you do close+reopen:
+
+1. Comment on the closed PR explaining the divergent-base + linking the new PR
+2. Carry over any AC/scope notes from the original PR body into the new one verbatim
+3. Re-run pre-PR audit fresh on the new PR (don't claim the old PR's audit)
+
+If you're unsure whether the divergence is severe enough to justify close+reopen, default to force-push and let the reviewer call it.
+
 ### Step 7: Update the PR body + comment
 
 ```bash
@@ -138,6 +148,7 @@ The block comment must include:
 ## What you must NOT do
 
 - Force-push without `--force-with-lease`
+- Close+reopen a PR to dodge a rebase you could have force-pushed (see Step 6 — narrow exception only, default is force-push)
 - Skip the re-test step
 - Skip the re-audit step (Phase 3)
 - Edit the PR body's audit block to "still ✅" without actually re-running the subagent
