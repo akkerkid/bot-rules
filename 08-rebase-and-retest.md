@@ -99,8 +99,13 @@ If you're unsure whether the divergence is severe enough to justify close+reopen
 ### Step 7: Update the PR body + comment
 
 ```bash
-# Replace the Q1-Q5 audit block with the new subagent verdict
-gh pr edit <N> --repo akkerkid/meshcore-planner --body "<new body with refreshed audit>"
+# Replace the Q1-Q5 audit block with the new subagent verdict.
+# Use `gh api`, NOT `gh pr edit`: the bot's MeshOMatic PAT has repo+workflow
+# scope but NOT read:org, and `gh pr edit` errors out without read:org. The
+# REST API works with repo scope. For a multi-line body, write it to a file
+# and pass it with -F (@file):
+#   gh api -X PATCH repos/akkerkid/meshcore-planner/pulls/<N> -F body=@/tmp/pr-body.md
+gh api -X PATCH repos/akkerkid/meshcore-planner/pulls/<N> -f body="<new body with refreshed audit>"
 
 # Comment the rebase summary
 gh pr comment <N> --repo akkerkid/meshcore-planner --body "<rebase report>"
@@ -120,10 +125,13 @@ Rebased onto upstream/main as of <SHA short>. Summary:
 ### Step 8: Remove the `bot-rebase` label
 
 ```bash
-gh pr edit <N> --repo akkerkid/meshcore-planner --remove-label bot-rebase
+# Use `gh api` (not `gh pr edit`): the bot's PAT lacks read:org, which
+# `gh pr edit` requires; the issue-labels REST API works with repo scope.
+gh api -X DELETE repos/akkerkid/meshcore-planner/issues/<N>/labels/bot-rebase
 ```
 
 This signals to the reviewer that the rebase is done. The PR is now ready for re-review.
+If the DELETE returns 404 the label was already absent -- treat that as success, not an error.
 
 ### Step 9: Update state file
 
