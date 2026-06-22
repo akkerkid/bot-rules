@@ -24,6 +24,36 @@ AkkerKid or the reviewer-agent signals this by:
 
 Either signal puts the PR at the top of your inbox queue (see `10-inbox-phase.md` step 1.5). Your job:
 
+## FIRST decide: rebase, or redo fresh?
+
+A rebase is only worth it when the branch is *close* to current main. If the branch is **severely stale** -- a month / hundreds of commits behind -- rebasing is a high-conflict slog AND the original code is likely superseded, so a clean re-implementation against today's code is faster and better. The PR branch has no intrinsic value; the underlying *issue* does.
+
+Check staleness before rebasing:
+
+```bash
+git fetch upstream main
+behind=$(git rev-list --count HEAD..upstream/main)
+echo "branch is $behind commits behind upstream/main"
+```
+
+**If `behind` > 300 (or the two-dot diff shows hundreds of deletions you did not author): do NOT rebase. Redo fresh instead:**
+
+1. Find the underlying issue from the PR body (`Closes #N`). Confirm it is still **open** and labelled `bot-eligible`. (If the issue was closed, just close the PR and move on -- the work is no longer wanted.)
+2. Close the stale PR with a comment naming the reason:
+   ```bash
+   gh pr close <PR> --repo akkerkid/meshcore-planner \
+     --comment "Closing in favor of a fresh redo against current main -- branch was $behind commits behind, so a rebase would be high-conflict over superseded code. Re-implementing issue #<N> fresh."
+   ```
+3. Delete the stale branch on both sides:
+   ```bash
+   git push origin --delete <branch>                 # remove from your fork
+   git checkout -f main && git branch -D <branch>     # remove the local copy
+   ```
+4. Remove the `bot-rebase` label if present (via `gh api`, see Step 8 below).
+5. Treat the underlying issue as a NEW pick: go to `11-work-phase.md`, branch off `upstream/main` fresh, implement against current code, open a new PR. Do NOT carry over the old branch's diff or its stale Q1-Q5 audit.
+
+Only when `behind` is small (the branch is genuinely close to main) do you run the rebase-and-retest procedure below.
+
 ## The rebase-and-retest procedure
 
 ### Step 1: Read the trigger
