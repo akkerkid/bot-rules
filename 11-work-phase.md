@@ -133,3 +133,39 @@ git push -u origin bot/N-foo
 ```
 
 The next iteration sees the WIP commit and continues from there.
+
+### REQUIRED before `gh pr create` — CI rejects PRs that skip these
+
+Two CI checks will mark your PR red (and it cannot merge) unless you do BOTH:
+
+**1. Lint-clean your changes** (the `diff-aware-lint` check runs ruff + darker + eslint on changed lines):
+
+```bash
+pip install --quiet -r scripts/lint/requirements.txt 2>/dev/null || true
+scripts/lint/run.sh --base upstream/main      # same harness CI runs
+# Fix EVERY violation it reports, e.g.:
+#   darker --revision upstream/main $(git diff --name-only upstream/main -- '*.py')
+# then re-commit the formatting:
+git commit -am "style: format changed lines (darker/ruff)" 2>/dev/null || true
+```
+
+**2. Open the PR with the MANDATORY body template** (the `enforce-bot-discipline` check rejects any PR body missing a `Closes #N` line OR the Q1-Q5 block). Write the body to a file and pass it with `--body-file` so nothing is dropped:
+
+```bash
+cat > /tmp/pr-body.md <<EOF
+Closes #<N>
+
+<one-paragraph summary of what changed and why>
+
+## Pre-PR self-audit
+Q1 (rule compliance): <invariants/style respected?>
+Q2 (tests run + results): <commands + pass/fail counts; say what you could NOT run>
+Q3 (scope match): <does the diff match issue #<N> exactly?>
+Q4 (risks): <what could this break?>
+Q5 (unverified): <anything you could not verify in the autobox sandbox>
+EOF
+gh pr create --repo akkerkid/meshcore-planner --head MeshOMatic:bot/<N>-foo \
+  --title "<conventional-commit title> (issue #<N>)" --body-file /tmp/pr-body.md
+```
+
+A PR without `Closes #N` + the Q1-Q5 block + lint-clean changed lines is dead-on-arrival in CI. Do not skip either step. (The Q1-Q5 content comes from your Phase 3 pre-PR review; see `12-pre-pr-review.md`.)
