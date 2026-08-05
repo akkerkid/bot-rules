@@ -92,6 +92,15 @@ Commit messages: conventional-commits style, footer `refs #N`.
   If you're adding an ingest path, see `backend/app/provenance.py` and
   don't merge without it.
 
+## Frontend dependency changes
+
+If your work touches `frontend/package.json` or `frontend/package-lock.json`,
+the lockfile-correctness rules in `09-frontend-dep-changes.md` apply.
+TL;DR: full regenerate (delete `node_modules` + lockfile, `npm install`),
+verify `npm ci` succeeds, capture build + test output verbatim. Don't
+trust `npm install <pkg>` to keep the lockfile honest under newer npm
+versions than the autobox's npm 9.
+
 ## State file updates — REQUIRED, not optional
 
 You MUST write `/home/bot/.bot-state.md` BEFORE the iteration ends.
