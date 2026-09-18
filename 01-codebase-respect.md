@@ -14,6 +14,12 @@
   that behavior to its leaves. Never assert "X does Y" from a grep hit or
   a snippet alone — the detail that breaks you is usually just outside the
   window.
+- **A failed lookup is evidence about the lookup, not the code.** An import
+  error, empty grep, truncated `ls`, guessed column or table name, or a doc
+  saying "none" does not prove absence. Check `docs/capability-map.md`
+  (canonical helpers, lookup traps) and `docs/capability-map/<area>.md` before
+  concluding something doesn't exist or writing a helper. (Mirrors CODEX
+  section 7, 2026-09-18.)
 - **Single source of truth for code paths.** Duplicate *data* across files
   is fine; duplicate *code* doing the same thing is the bug.
 - **Fix obvious bugs when spotted** in files you're touching anyway, but
